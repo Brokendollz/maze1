@@ -119,30 +119,14 @@ h1{
 /* ── Controls info ── */
 #ctrl{font-size:11px;color:#4a4d5e;text-align:center;letter-spacing:0.3px;line-height:1.6}
 
-/* ── D-pad ── */
-#dpad{display:grid;grid-template-areas:". up ." "left down right";gap:6px;margin-top:4px}
-#dpad button{
-  touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;
-  border-radius:12px;padding:0;
-  font-size:18px;
-  width:56px;height:56px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  color:#6b6f85;
-  backdrop-filter:blur(4px);
-  transition:all 0.15s ease;
+/* ── Joystick zone ── */
+#joystick-zone{
+  position:relative;
+  width:150px;height:150px;
+  margin:4px auto 0;
+  touch-action:none;
+  display:none; /* shown only on touch devices via JS */
 }
-#dpad button:hover{
-  background:rgba(255,255,255,0.08);
-  border-color:rgba(167,139,250,0.3);
-  color:#a78bfa;
-}
-#dpad button:active{
-  background:rgba(167,139,250,0.15);
-  transform:scale(0.93);
-}
-#btn-up{grid-area:up}#btn-left{grid-area:left}#btn-down{grid-area:down}#btn-right{grid-area:right}
 
 /* ── New Game button ── */
 #rb{
@@ -184,8 +168,8 @@ h1{
   h1{font-size:clamp(18px,4.5vw,24px)}
   #hud{flex-direction:row;flex-wrap:wrap;justify-content:center}
   .hud-card{padding:6px 12px;font-size:12px}
-  #dpad button{
-    font-size:clamp(16px,4.5vw,22px);
-    width:clamp(50px,14vw,68px);height:clamp(50px,14vw,68px);
+  #joystick-zone{
+    width:clamp(130px,35vw,170px);
+    height:clamp(130px,35vw,170px);
   }
 }

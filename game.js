@@ -806,8 +806,52 @@ document.addEventListener('keydown',e=>{
     w:[0,-1],s:[0,1],a:[-1,0],d:[1,0],W:[0,-1],S:[0,1],A:[-1,0],D:[1,0]};
   if(m[e.key]){tryMove(...m[e.key]);e.preventDefault();}
 });
-function bindBtn(id,dx,dy){const btn=document.getElementById(id);let active=false;btn.addEventListener('touchstart',e=>{e.preventDefault();if(!active){active=true;tryMove(dx,dy);}},{passive:false});btn.addEventListener('touchend',()=>{active=false;},{passive:true});btn.addEventListener('click',()=>tryMove(dx,dy));}
-bindBtn('btn-up',0,-1);bindBtn('btn-down',0,1);bindBtn('btn-left',-1,0);bindBtn('btn-right',1,0);
+/* ── Nipplejs joystick (touch devices) ── */
+(function(){
+  const zone=document.getElementById('joystick-zone');
+  const isTouchDevice='ontouchstart' in window||navigator.maxTouchPoints>0;
+  if(!isTouchDevice||typeof nipplejs==='undefined'){return;}
+  zone.style.display='block';
+  const mgr=nipplejs.create({
+    zone:zone,
+    mode:'static',
+    position:{left:'50%',top:'50%'},
+    color:'rgba(167,139,250,0.35)',
+    size:120,
+    restOpacity:0.6,
+    fadeTime:150
+  });
+  let joyDir=null,joyInterval=null;
+  const FIRST_DELAY=120,REPEAT_DELAY=110;
+  function dirFromAngle(deg){
+    /* nipplejs angles: 0=right, 90=up, 180=left, 270=down */
+    if(deg>=45&&deg<135) return [0,-1];  /* up */
+    if(deg>=135&&deg<225) return [-1,0]; /* left */
+    if(deg>=225&&deg<315) return [0,1];  /* down */
+    return [1,0]; /* right */
+  }
+  function startRepeat(dx,dy){
+    stopRepeat();
+    joyDir=[dx,dy];
+    tryMove(dx,dy);
+    joyInterval=setInterval(()=>{
+      if(joyDir)tryMove(joyDir[0],joyDir[1]);
+    },REPEAT_DELAY);
+  }
+  function stopRepeat(){
+    joyDir=null;
+    if(joyInterval){clearInterval(joyInterval);joyInterval=null;}
+  }
+  mgr.on('move',function(evt,data){
+    if(!data.direction) return;
+    const d=dirFromAngle(data.angle.degree);
+    if(!joyDir||d[0]!==joyDir[0]||d[1]!==joyDir[1]){
+      startRepeat(d[0],d[1]);
+    }
+  });
+  mgr.on('end',function(){stopRepeat();});
+})();
+/* ── Swipe fallback on canvas ── */
 let ts=null;canvas.addEventListener('touchstart',e=>{ts={x:e.touches[0].clientX,y:e.touches[0].clientY};e.preventDefault();},{passive:false});canvas.addEventListener('touchend',e=>{if(!ts)return;const dx=e.changedTouches[0].clientX-ts.x,dy=e.changedTouches[0].clientY-ts.y;if(Math.max(Math.abs(dx),Math.abs(dy))>18)Math.abs(dx)>Math.abs(dy)?tryMove(dx>0?1:-1,0):tryMove(0,dy>0?1:-1);ts=null;e.preventDefault();},{passive:false});
 let resizeTimer=null;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(dead||levelComplete)return;T=calcTile();canvas.width=COLS*T;canvas.height=ROWS*T;},100);});
 
