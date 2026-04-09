@@ -49,11 +49,13 @@ function updateAndDrawParticles(){
   for(const p of particles){
     p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.life-=p.decay;
     if(p.life<=0)continue;
+    const r=Math.max(0,p.size*p.life);
+    if(r<0.1)continue;
     ctx.save();
-    ctx.globalAlpha=p.life;
+    ctx.globalAlpha=Math.max(0,Math.min(1,p.life));
     ctx.fillStyle=p.color;
     ctx.shadowColor=p.color;ctx.shadowBlur=6;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
     ctx.restore();
   }
 }
@@ -67,14 +69,17 @@ function triggerShake(){
   setTimeout(()=>wrap.classList.remove('shake'),500);
 }
 
-/* ── Confetti on level complete ── */
+/* ── Confetti on level complete (loaded async) ── */
+(function(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js';s.async=true;document.head.appendChild(s);})();
 function triggerConfetti(){
   if(typeof confetti!=='function')return;
-  const canvasRect=document.getElementById('canvas').getBoundingClientRect();
-  const cx=(canvasRect.left+canvasRect.right)/2/window.innerWidth;
-  const cy=(canvasRect.top+canvasRect.bottom)/2/window.innerHeight;
-  confetti({particleCount:80,spread:70,origin:{x:cx,y:cy},colors:['#34d399','#60a5fa','#a78bfa','#fbbf24'],gravity:0.8});
-  setTimeout(()=>confetti({particleCount:50,spread:90,origin:{x:cx,y:cy},colors:['#34d399','#67e8f9','#fde68a'],gravity:0.7}),300);
+  try{
+    const canvasRect=document.getElementById('canvas').getBoundingClientRect();
+    const cx=(canvasRect.left+canvasRect.right)/2/window.innerWidth;
+    const cy=(canvasRect.top+canvasRect.bottom)/2/window.innerHeight;
+    confetti({particleCount:80,spread:70,origin:{x:cx,y:cy},colors:['#34d399','#60a5fa','#a78bfa','#fbbf24'],gravity:0.8});
+    setTimeout(()=>confetti({particleCount:50,spread:90,origin:{x:cx,y:cy},colors:['#34d399','#67e8f9','#fde68a'],gravity:0.7}),300);
+  }catch(e){}
 }
 
 /* ── HUD pop animation ── */
@@ -566,53 +571,53 @@ function drawPopups(t){
 
 /* ── Main loop ── */
 function loop(t){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
-    drawFloor(x,y);
-    const tile=grid[y][x];
-    if(tile===WALL)drawWall(x,y);
-    else if(isGem(tile))drawGem(x,y,t,tile);
-    else if(tile===FIRE)drawFire(x,y,t);
-    if(doorOpen&&x===DX&&y===DY)drawDoor(t);
-  }
-  drawPlayer(t);
-  drawEffects(t);
-  drawPopups(t);
-  updateAndDrawParticles();
+  try{
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+      drawFloor(x,y);
+      const tile=grid[y][x];
+      if(tile===WALL)drawWall(x,y);
+      else if(isGem(tile))drawGem(x,y,t,tile);
+      else if(tile===FIRE)drawFire(x,y,t);
+      if(doorOpen&&x===DX&&y===DY)drawDoor(t);
+    }
+    drawPlayer(t);
+    drawEffects(t);
+    drawPopups(t);
+    updateAndDrawParticles();
 
-  if(dead){
-    ctx.fillStyle='rgba(8,9,15,0.75)';ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.save();
-    const fSize=Math.max(16,T*.5);
-    ctx.font=`700 ${fSize}px 'Orbitron','Inter',system-ui,sans-serif`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.shadowColor='rgba(239,68,68,0.6)';ctx.shadowBlur=20;ctx.fillStyle='#ef4444';
-    ctx.fillText('You burned!',canvas.width/2,canvas.height/2-fSize*0.3);
-    ctx.shadowBlur=0;
-    ctx.font=`600 ${Math.max(12,T*.32)}px 'Inter',system-ui,sans-serif`;
-    ctx.fillStyle='#fbbf24';
-    ctx.fillText(`Score: ${score}  \u2022  Level ${level}`,canvas.width/2,canvas.height/2+fSize*0.6);
-    ctx.font=`500 ${Math.max(11,T*.25)}px 'Inter',system-ui,sans-serif`;
-    ctx.fillStyle='rgba(200,202,208,0.6)';
-    ctx.fillText('Press Enter or tap New Game',canvas.width/2,canvas.height/2+fSize*1.3);
-    ctx.restore();
-    return;
+    if(dead){
+      ctx.fillStyle='rgba(8,9,15,0.75)';ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.save();
+      const fSize=Math.max(16,T*.5);
+      ctx.font=`700 ${fSize}px 'Orbitron','Inter',system-ui,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.shadowColor='rgba(239,68,68,0.6)';ctx.shadowBlur=20;ctx.fillStyle='#ef4444';
+      ctx.fillText('You burned!',canvas.width/2,canvas.height/2-fSize*0.3);
+      ctx.shadowBlur=0;
+      ctx.font=`600 ${Math.max(12,T*.32)}px 'Inter',system-ui,sans-serif`;
+      ctx.fillStyle='#fbbf24';
+      ctx.fillText(`Score: ${score}  \u2022  Level ${level}`,canvas.width/2,canvas.height/2+fSize*0.6);
+      ctx.font=`500 ${Math.max(11,T*.25)}px 'Inter',system-ui,sans-serif`;
+      ctx.fillStyle='rgba(200,202,208,0.6)';
+      ctx.fillText('Press Enter or tap New Game',canvas.width/2,canvas.height/2+fSize*1.3);
+      ctx.restore();
+    }else if(levelComplete){
+      const elapsed=t-levelCompleteTime;
+      const alpha=Math.min(0.7,elapsed/500);
+      ctx.fillStyle=`rgba(8,9,15,${alpha})`;ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.save();
+      const fSize=Math.max(16,T*.45);
+      ctx.font=`700 ${fSize}px 'Orbitron','Inter',system-ui,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.shadowColor='rgba(52,211,153,0.6)';ctx.shadowBlur=20;ctx.fillStyle='#34d399';
+      ctx.fillText(`Level ${level} Complete!`,canvas.width/2,canvas.height/2);
+      ctx.shadowBlur=0;
+      ctx.restore();
+    }
+  }catch(e){
+    console.error('loop error:',e);
   }
-
-  if(levelComplete){
-    const elapsed=t-levelCompleteTime;
-    const alpha=Math.min(0.7,elapsed/500);
-    ctx.fillStyle=`rgba(8,9,15,${alpha})`;ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.save();
-    const fSize=Math.max(16,T*.45);
-    ctx.font=`700 ${fSize}px 'Orbitron','Inter',system-ui,sans-serif`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.shadowColor='rgba(52,211,153,0.6)';ctx.shadowBlur=20;ctx.fillStyle='#34d399';
-    ctx.fillText(`Level ${level} Complete!`,canvas.width/2,canvas.height/2);
-    ctx.shadowBlur=0;
-    ctx.restore();
-  }
-
   rafId=requestAnimationFrame(loop);
 }
 
