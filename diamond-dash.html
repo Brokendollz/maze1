@@ -6,7 +6,8 @@
 <title>Diamond Dash</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.2/nipplejs.min.js"></script>
 </head>
 <body>
 <div id="gw">
@@ -24,15 +25,10 @@
     </div>
     <div id="msg"></div>
     <div id="ctrl">❄️ Ice=Freeze · ⏳ Time=Slow · 💥 Bomb=Explode<br>Collect combos for bonus!<br>Arrows / WASD / Drag</div>
-    <div id="dpad">
-      <button id="btn-up">▲</button>
-      <button id="btn-left">◀</button>
-      <button id="btn-down">▼</button>
-      <button id="btn-right">▶</button>
-    </div>
+    <div id="joystick-zone"></div>
     <button id="rb" style="display:none" onclick="initGame()">New Game</button>
   </div>
 </div>
-<script src="game.js?v=4"></script>
+<script src="game.js?v=5"></script>
 </body>
 </html>
