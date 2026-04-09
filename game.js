@@ -821,27 +821,35 @@ document.addEventListener('keydown',e=>{
     restOpacity:0.6,
     fadeTime:150
   });
-  let joyDir=null,joyInterval=null;
-  const REPEAT_DELAY=120;
+  let joyDir=null,joyInterval=null,curDelay=0;
   const dirMap={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
-  function startRepeat(dx,dy){
-    stopRepeat();
+  function delayFromForce(f){
+    if(f<0.35) return 180;
+    if(f<0.65) return 95;
+    return 55;
+  }
+  function startRepeat(dx,dy,delay){
     joyDir=[dx,dy];
+    curDelay=delay;
+    if(joyInterval) clearInterval(joyInterval);
     tryMove(dx,dy);
     joyInterval=setInterval(()=>{
       if(joyDir)tryMove(joyDir[0],joyDir[1]);
-    },REPEAT_DELAY);
+    },delay);
   }
   function stopRepeat(){
-    joyDir=null;
+    joyDir=null;curDelay=0;
     if(joyInterval){clearInterval(joyInterval);joyInterval=null;}
   }
   mgr.on('move',function(evt,data){
     if(!data.direction) return;
     const d=dirMap[data.direction.angle];
     if(!d) return;
-    if(!joyDir||d[0]!==joyDir[0]||d[1]!==joyDir[1]){
-      startRepeat(d[0],d[1]);
+    const delay=delayFromForce(data.force);
+    const dirChanged=!joyDir||d[0]!==joyDir[0]||d[1]!==joyDir[1];
+    const speedChanged=Math.abs(delay-curDelay)>15;
+    if(dirChanged||speedChanged){
+      startRepeat(d[0],d[1],delay);
     }
   });
   mgr.on('end',function(){stopRepeat();});
