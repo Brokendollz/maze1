@@ -111,6 +111,184 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);
 function isGem(t){return t===GEM||t===ICE_GEM||t===TIME_GEM||t===BOMB_GEM;}
 function gemCount(){let g=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(isGem(grid[y][x]))g++;return g;}
 
+/* ══════════════════════ Maze generators ══════════════════════ */
+
+/* BFS reachability check */
+function isReachable(g,x1,y1,x2,y2){
+  if(g[y1][x1]===WALL||g[y2][x2]===WALL)return false;
+  const vis=new Set([`${x1},${y1}`]);
+  const q=[[x1,y1]];
+  while(q.length){
+    const[x,y]=q.shift();
+    if(x===x2&&y===y2)return true;
+    for(const[dx,dy]of[[0,1],[0,-1],[1,0],[-1,0]]){
+      const nx=x+dx,ny=y+dy,k=`${nx},${ny}`;
+      if(nx>0&&nx<COLS-1&&ny>0&&ny<ROWS-1&&!vis.has(k)&&g[ny][nx]!==WALL){vis.add(k);q.push([nx,ny]);}
+    }
+  }
+  return false;
+}
+
+/* Carve an L-shaped path to guarantee connectivity */
+function carvePath(g,x1,y1,x2,y2){
+  let x=x1,y=y1;
+  while(x!==x2){if(g[y][x]===WALL)g[y][x]=EMPTY;x+=x<x2?1:-1;}
+  while(y!==y2){if(g[y][x]===WALL)g[y][x]=EMPTY;y+=y<y2?1:-1;}
+  g[y2][x2]=EMPTY;
+}
+
+/* Make base grid (border walls, empty inside) */
+function baseGrid(){
+  return Array.from({length:ROWS},(_,y)=>Array.from({length:COLS},(_,x)=>
+    (x===0||x===COLS-1||y===0||y===ROWS-1)?WALL:EMPTY));
+}
+
+/* Ensure start/exit are open and connected */
+function ensureConnected(g){
+  g[1][1]=EMPTY;g[1][2]=EMPTY;g[2][1]=EMPTY;
+  g[DY][DX]=EMPTY;
+  if(g[DY-1][DX]===WALL&&g[DY][DX-1]===WALL)g[DY][DX-1]=EMPTY;
+  if(!isReachable(g,1,1,DX,DY))carvePath(g,1,1,DX,DY);
+  return g;
+}
+
+/* Type 0 — Pillars (original) */
+function genPillars(){
+  const g=baseGrid();
+  for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)
+    if(x%2===0&&y%2===0)g[y][x]=WALL;
+  return ensureConnected(g);
+}
+
+/* Type 1 — DFS Maze (winding corridors) */
+function genDFSMaze(){
+  const g=Array.from({length:ROWS},(_,y)=>Array.from({length:COLS},(_,x)=>
+    (x===0||x===COLS-1||y===0||y===ROWS-1)?WALL:WALL));
+  const vis=new Set();
+  const stack=[{x:1,y:1}];
+  vis.add('1,1');g[1][1]=EMPTY;
+  while(stack.length){
+    const{x,y}=stack[stack.length-1];
+    const dirs=shuffle([[0,-2],[0,2],[-2,0],[2,0]]);
+    let moved=false;
+    for(const[dx,dy]of dirs){
+      const nx=x+dx,ny=y+dy;
+      if(nx>0&&nx<COLS-1&&ny>0&&ny<ROWS-1&&!vis.has(`${nx},${ny}`)){
+        vis.add(`${nx},${ny}`);
+        g[y+dy/2][x+dx/2]=EMPTY;
+        g[ny][nx]=EMPTY;
+        stack.push({x:nx,y:ny});
+        moved=true;break;
+      }
+    }
+    if(!moved)stack.pop();
+  }
+  /* Open extra passages for more room to play */
+  const extra=Math.floor(COLS*ROWS*0.04);
+  for(let i=0;i<extra;i++){
+    const x=1+((0|Math.random()*(COLS-2))/1|0);
+    const y=1+((0|Math.random()*(ROWS-2))/1|0);
+    if(g[y][x]===WALL)g[y][x]=EMPTY;
+  }
+  return ensureConnected(g);
+}
+
+/* Type 2 — Rooms & Corridors (dungeon) */
+function genRooms(){
+  const g=Array.from({length:ROWS},(_,y)=>Array.from({length:COLS},(_,x)=>
+    (x===0||x===COLS-1||y===0||y===ROWS-1)?WALL:WALL));
+  const rooms=[];
+  const numRooms=3+Math.min(2,Math.floor(COLS/4));
+  for(let attempt=0;attempt<numRooms*20&&rooms.length<numRooms;attempt++){
+    const rw=2+(0|Math.random()*Math.min(3,COLS/3));
+    const rh=2+(0|Math.random()*Math.min(3,ROWS/3));
+    const rx=1+(0|Math.random()*(COLS-2-rw));
+    const ry=1+(0|Math.random()*(ROWS-2-rh));
+    let overlap=false;
+    for(const r of rooms)
+      if(rx<r.x+r.w+1&&rx+rw+1>r.x&&ry<r.y+r.h+1&&ry+rh+1>r.y){overlap=true;break;}
+    if(!overlap){
+      rooms.push({x:rx,y:ry,w:rw,h:rh});
+      for(let y=ry;y<ry+rh&&y<ROWS-1;y++)for(let x=rx;x<rx+rw&&x<COLS-1;x++)g[y][x]=EMPTY;
+    }
+  }
+  /* Connect rooms with L-shaped corridors */
+  const centers=rooms.map(r=>({x:r.x+(r.w>>1),y:r.y+(r.h>>1)}));
+  centers.sort((a,b)=>(a.x+a.y)-(b.x+b.y));
+  for(let i=0;i<centers.length-1;i++){
+    const a=centers[i],b=centers[i+1];
+    let x=a.x,y=a.y;
+    while(x!==b.x){if(x>0&&x<COLS-1)g[y][x]=EMPTY;x+=x<b.x?1:-1;}
+    while(y!==b.y){if(y>0&&y<ROWS-1)g[y][x]=EMPTY;y+=y<b.y?1:-1;}
+  }
+  return ensureConnected(g);
+}
+
+/* Type 3 — Open arena with scattered wall clusters */
+function genOpenScatter(){
+  const g=baseGrid();
+  const clusters=2+Math.floor(COLS*ROWS*0.01);
+  const safe=new Set(['1,1','2,1','1,2',`${DX},${DY}`,`${DX-1},${DY}`,`${DX},${DY-1}`]);
+  for(let c=0;c<clusters;c++){
+    const cx=2+(0|Math.random()*(COLS-4));
+    const cy=2+(0|Math.random()*(ROWS-4));
+    const size=1+(0|Math.random()*2);
+    for(let dy=-size;dy<=size;dy++)for(let dx=-size;dx<=size;dx++){
+      const x=cx+dx,y=cy+dy;
+      if(x>0&&x<COLS-1&&y>0&&y<ROWS-1&&!safe.has(`${x},${y}`)&&Math.random()<0.7)
+        g[y][x]=WALL;
+    }
+  }
+  return ensureConnected(g);
+}
+
+/* Type 4 — Cross pattern with four quadrants */
+function genCross(){
+  const g=baseGrid();
+  const mx=COLS>>1,my=ROWS>>1;
+  /* Horizontal and vertical walls forming a cross */
+  for(let x=1;x<COLS-1;x++)if(x!==mx-1&&x!==mx&&x!==mx+1)g[my][x]=WALL;
+  for(let y=1;y<ROWS-1;y++)if(y!==my-1&&y!==my&&y!==my+1)g[y][mx]=WALL;
+  /* One opening per quadrant wall */
+  const openH=1+(0|Math.random()*(mx-2));
+  const openH2=mx+2+(0|Math.random()*(COLS-mx-3));
+  const openV=1+(0|Math.random()*(my-2));
+  const openV2=my+2+(0|Math.random()*(ROWS-my-3));
+  if(openH>0&&openH<COLS-1)g[my][openH]=EMPTY;
+  if(openH2>0&&openH2<COLS-1)g[my][openH2]=EMPTY;
+  if(openV>0&&openV<ROWS-1)g[openV][mx]=EMPTY;
+  if(openV2>0&&openV2<ROWS-1)g[openV2][mx]=EMPTY;
+  /* Add some pillars in each quadrant */
+  for(let y=2;y<ROWS-2;y+=3)for(let x=2;x<COLS-2;x+=3)
+    if(g[y][x]===EMPTY&&Math.random()<0.35)g[y][x]=WALL;
+  return ensureConnected(g);
+}
+
+/* Type 5 — Diagonal stripes */
+function genDiagonal(){
+  const g=baseGrid();
+  for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)
+    if((x+y)%3===0)g[y][x]=WALL;
+  /* Punch holes for playability */
+  for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)
+    if(g[y][x]===WALL&&Math.random()<0.3)g[y][x]=EMPTY;
+  return ensureConnected(g);
+}
+
+const MAZE_TYPES=6;
+function generateGrid(lvl){
+  const type=(lvl-1)%MAZE_TYPES;
+  switch(type){
+    case 0:return genPillars();
+    case 1:return genDFSMaze();
+    case 2:return genRooms();
+    case 3:return genOpenScatter();
+    case 4:return genCross();
+    case 5:return genDiagonal();
+    default:return genPillars();
+  }
+}
+
 function pickNextBurn(){
   let gems=[];
   for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(isGem(grid[y][x]))gems.push({x,y});
@@ -189,8 +367,7 @@ function initLevel(){
   fireAge=new Map();
   burnedGems=new Map();
 
-  grid=Array.from({length:ROWS},(_,y)=>Array.from({length:COLS},(_,x)=>
-    (x===0||x===COLS-1||y===0||y===ROWS-1)?WALL:(x%2===0&&y%2===0)?WALL:EMPTY));
+  grid=generateGrid(level);
   const safe=new Set(['1,1','2,1','1,2',`${DX},${DY}`]);
   let open=[];
   for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)
