@@ -48,6 +48,7 @@ function updateAndDrawParticles(){
   particles=particles.filter(p=>p.life>0);
   for(const p of particles){
     p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.life-=p.decay;
+    if(p.life<=0)continue;
     ctx.save();
     ctx.globalAlpha=p.life;
     ctx.fillStyle=p.color;
