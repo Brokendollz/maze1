@@ -129,6 +129,44 @@ h1{
   display:none; /* shown only on touch devices via JS */
   z-index:9999;
 }
+/* hide nipplejs default visuals */
+#joystick-zone .front,#joystick-zone .back{display:none!important}
+/* arrow overlay */
+.joy-arrows{
+  position:absolute;inset:0;
+  pointer-events:none;
+}
+.joy-arrow{
+  position:absolute;
+  width:0;height:0;
+  opacity:0.25;
+  transition:opacity 0.1s,filter 0.1s;
+  filter:drop-shadow(0 0 2px rgba(0,0,0,0.4));
+}
+.joy-arrow.active{
+  opacity:0.85;
+  filter:drop-shadow(0 0 6px rgba(220,40,40,0.6));
+}
+.joy-arrow.a-up{
+  top:6px;left:50%;transform:translateX(-50%);
+  border-left:14px solid transparent;border-right:14px solid transparent;
+  border-bottom:18px solid #e04040;
+}
+.joy-arrow.a-down{
+  bottom:6px;left:50%;transform:translateX(-50%);
+  border-left:14px solid transparent;border-right:14px solid transparent;
+  border-top:18px solid #e04040;
+}
+.joy-arrow.a-left{
+  left:6px;top:50%;transform:translateY(-50%);
+  border-top:14px solid transparent;border-bottom:14px solid transparent;
+  border-right:18px solid #e04040;
+}
+.joy-arrow.a-right{
+  right:6px;top:50%;transform:translateY(-50%);
+  border-top:14px solid transparent;border-bottom:14px solid transparent;
+  border-left:18px solid #e04040;
+}
 
 /* ── New Game button ── */
 #rb{

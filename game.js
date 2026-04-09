@@ -812,17 +812,37 @@ document.addEventListener('keydown',e=>{
   const isTouchDevice='ontouchstart' in window||navigator.maxTouchPoints>0;
   if(!isTouchDevice||typeof nipplejs==='undefined'){return;}
   zone.style.display='block';
+  /* build arrow overlay */
+  const arrows=document.createElement('div');
+  arrows.className='joy-arrows';
+  ['up','down','left','right'].forEach(d=>{
+    const a=document.createElement('div');
+    a.className='joy-arrow a-'+d;
+    a.dataset.dir=d;
+    arrows.appendChild(a);
+  });
+  zone.appendChild(arrows);
+  const arrowEls=Object.fromEntries(
+    [...arrows.children].map(a=>[a.dataset.dir,a])
+  );
+  /* nipplejs – invisible, just for touch handling */
   const mgr=nipplejs.create({
     zone:zone,
     mode:'static',
     position:{left:'50%',top:'50%'},
-    color:'rgba(220,40,40,0.85)',
-    size:120,
-    restOpacity:0.6,
-    fadeTime:150
+    color:'transparent',
+    size:130,
+    restOpacity:0,
+    fadeTime:0
   });
-  let joyDir=null,joyInterval=null,curDelay=0;
+  let joyDir=null,joyInterval=null,curDelay=0,activeArrow=null;
   const dirMap={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+  function setActiveArrow(dir){
+    if(activeArrow===dir) return;
+    if(activeArrow) arrowEls[activeArrow].classList.remove('active');
+    activeArrow=dir;
+    if(dir) arrowEls[dir].classList.add('active');
+  }
   function delayFromForce(f){
     if(f<0.35) return 180;
     if(f<0.65) return 95;
@@ -840,11 +860,14 @@ document.addEventListener('keydown',e=>{
   function stopRepeat(){
     joyDir=null;curDelay=0;
     if(joyInterval){clearInterval(joyInterval);joyInterval=null;}
+    setActiveArrow(null);
   }
   mgr.on('move',function(evt,data){
     if(!data.direction) return;
-    const d=dirMap[data.direction.angle];
+    const dir=data.direction.angle;
+    const d=dirMap[dir];
     if(!d) return;
+    setActiveArrow(dir);
     const delay=delayFromForce(data.force);
     const dirChanged=!joyDir||d[0]!==joyDir[0]||d[1]!==joyDir[1];
     const speedChanged=Math.abs(delay-curDelay)>15;
