@@ -2,7 +2,7 @@
 
 /* Tile types */
 const EMPTY=0,WALL=1,GEM=2,FIRE=3,ICE_GEM=4,TIME_GEM=5,BOMB_GEM=6;
-const SPECIAL_CHANCE=0.15,COMBO_WINDOW=1500;
+const SPECIAL_CHANCE=0.15,COMBO_WINDOW=1500,FIRE_LIFE_MIN=6000,FIRE_LIFE_MAX=12000;
 
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
@@ -14,6 +14,8 @@ let rafId,fireTimerId,nextBurn,burnStartTime,baseFireMs;
 let combo,lastPickupTime,comboPopups;
 let fireFrozen,freezeEndTime,fireSlowed,slowEndTime;
 let levelComplete,levelCompleteTime;
+let fireAge; /* Map "x,y" → timestamp when fire was placed */
+let extinguishTimerId;
 
 /* ── Level config ── */
 function lvlCfg(l){
@@ -39,8 +41,23 @@ function pickNextBurn(){
   nextBurn=gems[0|Math.random()*gems.length];burnStartTime=performance.now();
 }
 
+function setFire(x,y){grid[y][x]=FIRE;fireAge.set(`${x},${y}`,performance.now()+FIRE_LIFE_MIN+Math.random()*(FIRE_LIFE_MAX-FIRE_LIFE_MIN));}
 function getFireMs(){return(fireSlowed&&performance.now()<slowEndTime)?baseFireMs*2:baseFireMs;}
 function scheduleBurn(){if(fireTimerId)clearTimeout(fireTimerId);fireTimerId=setTimeout(burnOne,getFireMs());}
+
+function extinguishOld(){
+  if(dead||levelComplete)return;
+  const now=performance.now();
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    if(grid[y][x]===FIRE){
+      const key=`${x},${y}`;
+      const expire=fireAge.get(key);
+      if(expire&&now>=expire){grid[y][x]=EMPTY;fireAge.delete(key);}
+    }
+  }
+  scheduleExtinguish();
+}
+function scheduleExtinguish(){if(extinguishTimerId)clearTimeout(extinguishTimerId);extinguishTimerId=setTimeout(extinguishOld,1000);}
 
 function burnOne(){
   if(dead||levelComplete)return;
@@ -48,7 +65,7 @@ function burnOne(){
   if(fireFrozen&&now<freezeEndTime){scheduleBurn();return;}
   if(now>=freezeEndTime)fireFrozen=false;
   if(now>=slowEndTime)fireSlowed=false;
-  if(nextBurn&&isGem(grid[nextBurn.y][nextBurn.x]))grid[nextBurn.y][nextBurn.x]=FIRE;
+  if(nextBurn&&isGem(grid[nextBurn.y][nextBurn.x]))setFire(nextBurn.x,nextBurn.y);
   updHUD();pickNextBurn();scheduleBurn();
 }
 
@@ -70,6 +87,7 @@ function addPopup(text,x,y,color){
 function initLevel(){
   if(rafId)cancelAnimationFrame(rafId);
   if(fireTimerId)clearTimeout(fireTimerId);
+  if(extinguishTimerId)clearTimeout(extinguishTimerId);
   const cfg=lvlCfg(level);
   COLS=cfg.cols;ROWS=cfg.rows;NEED=cfg.need;
   baseFireMs=cfg.fireMs;DX=COLS-2;DY=ROWS-2;
@@ -78,6 +96,7 @@ function initLevel(){
   px=1;py=1;nextBurn=null;combo=1;lastPickupTime=0;
   fireFrozen=false;fireSlowed=false;freezeEndTime=0;slowEndTime=0;
   comboPopups=[];
+  fireAge=new Map();
 
   grid=Array.from({length:ROWS},(_,y)=>Array.from({length:COLS},(_,x)=>
     (x===0||x===COLS-1||y===0||y===ROWS-1)?WALL:(x%2===0&&y%2===0)?WALL:EMPTY));
@@ -87,7 +106,7 @@ function initLevel(){
     if(grid[y][x]===EMPTY&&!safe.has(`${x},${y}`))open.push({x,y});
   shuffle(open);
   let idx=0;
-  for(let i=0;i<cfg.iFire&&idx<open.length;i++,idx++)grid[open[idx].y][open[idx].x]=FIRE;
+  for(let i=0;i<cfg.iFire&&idx<open.length;i++,idx++)setFire(open[idx].x,open[idx].y);
   for(let i=0;i<cfg.iGem&&idx<open.length;i++,idx++){
     if(Math.random()<SPECIAL_CHANCE){
       grid[open[idx].y][open[idx].x]=[ICE_GEM,TIME_GEM,BOMB_GEM][0|Math.random()*3];
@@ -100,7 +119,7 @@ function initLevel(){
   document.getElementById('msg').textContent=level>1?`Level ${level} — Go!`:'';
   if(level>1)setTimeout(()=>{if(!dead&&!levelComplete)document.getElementById('msg').textContent='';},2000);
   document.getElementById('rb').style.display='none';
-  pickNextBurn();scheduleBurn();rafId=requestAnimationFrame(loop);
+  pickNextBurn();scheduleBurn();scheduleExtinguish();rafId=requestAnimationFrame(loop);
 }
 
 function initGame(){level=1;score=0;comboPopups=[];initLevel();}
@@ -132,7 +151,7 @@ function tryMove(dx,dy){
     }else if(tile===BOMB_GEM){
       let ext=0;
       for(let by=ny-1;by<=ny+1;by++)for(let bx=nx-1;bx<=nx+1;bx++)
-        if(by>=0&&by<ROWS&&bx>=0&&bx<COLS&&grid[by][bx]===FIRE){grid[by][bx]=EMPTY;ext++;}
+        if(by>=0&&by<ROWS&&bx>=0&&bx<COLS&&grid[by][bx]===FIRE){grid[by][bx]=EMPTY;fireAge.delete(`${bx},${by}`);ext++;}
       addPopup(`💥 -${ext}🔥`,nx*T+T/2,ny*T-T*0.3,'#f87171');
     }
     if(collected>=NEED&&!doorOpen){
@@ -142,12 +161,12 @@ function tryMove(dx,dy){
     }
     updHUD();
   }else if(tile===FIRE){
-    dead=true;if(fireTimerId)clearTimeout(fireTimerId);
+    dead=true;if(fireTimerId)clearTimeout(fireTimerId);if(extinguishTimerId)clearTimeout(extinguishTimerId);
     document.getElementById('msg').textContent='You burned! Game over.';
     document.getElementById('rb').style.display='block';
   }else if(doorOpen&&nx===DX&&ny===DY){
     levelComplete=true;levelCompleteTime=performance.now();
-    if(fireTimerId)clearTimeout(fireTimerId);
+    if(fireTimerId)clearTimeout(fireTimerId);if(extinguishTimerId)clearTimeout(extinguishTimerId);
     const bonus=50*level;score+=bonus;
     document.getElementById('msg').textContent=`Level ${level} complete! +${bonus} bonus`;
     updHUD();
