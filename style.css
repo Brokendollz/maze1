@@ -16,10 +16,16 @@ h1{
   font-size:clamp(18px,4.5vw,24px);font-weight:700;
   letter-spacing:2px;text-transform:uppercase;
   background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);
+  background-size:200% 200%;
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
   margin-bottom:2px;
   filter:drop-shadow(0 0 12px rgba(96,165,250,0.3));
+  animation:titleShift 4s ease-in-out infinite;
+}
+@keyframes titleShift{
+  0%,100%{background-position:0% 50%}
+  50%{background-position:100% 50%}
 }
 #hud{
   display:flex;gap:6px;flex-wrap:wrap;justify-content:center;width:100%;
@@ -32,9 +38,16 @@ h1{
   font-size:12px;color:#8b8fa3;
   backdrop-filter:blur(8px);
   display:flex;align-items:center;gap:6px;
-  transition:border-color 0.3s;
+  transition:border-color 0.3s, transform 0.2s;
+  animation:hudFloat 3s ease-in-out infinite;
 }
-.hud-card:hover{border-color:rgba(255,255,255,0.15)}
+.hud-card:nth-child(2){animation-delay:0.5s}
+.hud-card:nth-child(3){animation-delay:1s}
+@keyframes hudFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-2px)}
+}
+.hud-card:hover{border-color:rgba(255,255,255,0.15);transform:translateY(-2px) scale(1.03)}
 .hud-card b{color:#e2e4ea;font-weight:600}
 .hud-card .icon{font-size:14px}
 #canvas-wrap{
@@ -45,12 +58,22 @@ h1{
     0 0 0 1px rgba(255,255,255,0.06),
     0 8px 32px rgba(0,0,0,0.5),
     0 0 60px rgba(96,165,250,0.06);
+  animation:canvasPulse 5s ease-in-out infinite;
+}
+@keyframes canvasPulse{
+  0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 8px 32px rgba(0,0,0,0.5),0 0 60px rgba(96,165,250,0.06)}
+  50%{box-shadow:0 0 0 1px rgba(255,255,255,0.08),0 8px 32px rgba(0,0,0,0.5),0 0 80px rgba(167,139,250,0.1)}
 }
 #canvas{display:block;touch-action:none;cursor:default;border-radius:14px}
 #msg{
   font-size:13px;font-weight:500;color:#a78bfa;min-height:20px;
   text-align:center;padding:0 8px;
   transition:color 0.3s;
+  animation:msgGlow 2s ease-in-out infinite;
+}
+@keyframes msgGlow{
+  0%,100%{filter:drop-shadow(0 0 0 transparent)}
+  50%{filter:drop-shadow(0 0 6px rgba(167,139,250,0.3))}
 }
 #ctrl{font-size:11px;color:#4a4d5e;text-align:center;letter-spacing:0.3px}
 #dpad{display:grid;grid-template-areas:". up ." "left down right";gap:6px;margin-top:4px}
@@ -70,10 +93,12 @@ h1{
   background:rgba(255,255,255,0.08);
   border-color:rgba(167,139,250,0.3);
   color:#a78bfa;
+  box-shadow:0 0 12px rgba(167,139,250,0.1);
 }
 #dpad button:active{
   background:rgba(167,139,250,0.15);
-  transform:scale(0.95);
+  transform:scale(0.93);
+  box-shadow:0 0 20px rgba(167,139,250,0.2);
 }
 #btn-up{grid-area:up}#btn-left{grid-area:left}#btn-down{grid-area:down}#btn-right{grid-area:right}
 #rb{
@@ -85,6 +110,11 @@ h1{
   letter-spacing:0.5px;text-transform:uppercase;
   backdrop-filter:blur(4px);
   transition:all 0.2s ease;
+  animation:rbPulse 2s ease-in-out infinite;
+}
+@keyframes rbPulse{
+  0%,100%{border-color:rgba(167,139,250,0.25)}
+  50%{border-color:rgba(167,139,250,0.5);box-shadow:0 0 20px rgba(167,139,250,0.1)}
 }
 #rb:hover{
   background:linear-gradient(135deg,rgba(167,139,250,0.25),rgba(96,165,250,0.25));
