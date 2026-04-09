@@ -4,39 +4,24 @@ body{
   background-image:
     radial-gradient(ellipse at 20% 50%, rgba(30,60,120,0.15) 0%, transparent 60%),
     radial-gradient(ellipse at 80% 20%, rgba(100,40,120,0.1) 0%, transparent 50%);
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  min-height:100vh;font-family:'Inter',system-ui,sans-serif;padding:1.2rem 0.5rem;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;font-family:'Inter',system-ui,sans-serif;
   color:#c8cad0;
+  overflow:hidden;
 }
+
+/* ── Main wrapper: desktop = row, mobile = column ── */
 #gw{
-  display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:580px;
+  display:flex;flex-direction:row;align-items:center;gap:28px;
+  width:100%;max-width:1100px;
+  padding:1rem;
 }
-h1{
-  font-family:'Orbitron','Inter',system-ui,sans-serif;
-  font-size:clamp(18px,4.5vw,24px);font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;
-  background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-  margin-bottom:2px;
-  filter:drop-shadow(0 0 12px rgba(96,165,250,0.3));
+
+/* ── Game area (canvas) ── */
+#game-area{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
 }
-#hud{
-  display:flex;gap:6px;flex-wrap:wrap;justify-content:center;width:100%;
-}
-.hud-card{
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.07);
-  border-radius:10px;
-  padding:6px 14px;
-  font-size:12px;color:#8b8fa3;
-  backdrop-filter:blur(8px);
-  display:flex;align-items:center;gap:6px;
-  transition:border-color 0.3s;
-}
-.hud-card:hover{border-color:rgba(255,255,255,0.15)}
-.hud-card b{color:#e2e4ea;font-weight:600}
-.hud-card .icon{font-size:14px}
 #canvas-wrap{
   position:relative;
   border-radius:14px;
@@ -45,21 +30,103 @@ h1{
     0 0 0 1px rgba(255,255,255,0.06),
     0 8px 32px rgba(0,0,0,0.5),
     0 0 60px rgba(96,165,250,0.06);
+  transition:transform 0.15s ease;
+}
+#canvas-wrap.shake{
+  animation:shake 0.4s ease-out;
+}
+@keyframes shake{
+  0%,100%{transform:translate(0,0) rotate(0)}
+  10%{transform:translate(-6px,3px) rotate(-1deg)}
+  20%{transform:translate(5px,-4px) rotate(1.5deg)}
+  30%{transform:translate(-4px,5px) rotate(-0.5deg)}
+  40%{transform:translate(6px,-2px) rotate(1deg)}
+  50%{transform:translate(-3px,4px) rotate(-1deg)}
+  60%{transform:translate(4px,-3px) rotate(0.5deg)}
+  70%{transform:translate(-2px,2px) rotate(-0.5deg)}
+  80%{transform:translate(3px,-1px) rotate(0.3deg)}
+  90%{transform:translate(-1px,1px) rotate(-0.2deg)}
 }
 #canvas{display:block;touch-action:none;cursor:default;border-radius:14px}
+
+/* ── Sidebar ── */
+#sidebar{
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  min-width:220px;max-width:280px;
+  padding:20px 16px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:16px;
+  backdrop-filter:blur(12px);
+}
+
+h1{
+  font-family:'Orbitron','Inter',system-ui,sans-serif;
+  font-size:22px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;
+  background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 12px rgba(96,165,250,0.3));
+  text-align:center;
+}
+
+/* ── HUD cards ── */
+#hud{
+  display:flex;flex-direction:column;gap:6px;width:100%;
+}
+.hud-card{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:10px;
+  padding:8px 14px;
+  font-size:13px;color:#8b8fa3;
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;gap:6px;
+  transition:border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+}
+.hud-card:hover{
+  border-color:rgba(255,255,255,0.15);
+  transform:translateX(-2px);
+}
+.hud-card b{color:#e2e4ea;font-weight:600;transition:color 0.3s,transform 0.2s}
+.hud-card .icon{font-size:15px}
+
+/* score pop animation */
+.hud-card.pop b{
+  animation:hudPop 0.35s ease-out;
+}
+@keyframes hudPop{
+  0%{transform:scale(1);color:#e2e4ea}
+  40%{transform:scale(1.4);color:#fbbf24}
+  100%{transform:scale(1);color:#e2e4ea}
+}
+
+/* ── Message area ── */
 #msg{
   font-size:13px;font-weight:500;color:#a78bfa;min-height:20px;
   text-align:center;padding:0 8px;
   transition:color 0.3s;
 }
-#ctrl{font-size:11px;color:#4a4d5e;text-align:center;letter-spacing:0.3px}
+#msg:not(:empty){
+  animation:msgSlide 0.3s ease-out;
+}
+@keyframes msgSlide{
+  0%{opacity:0;transform:translateY(-6px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+
+/* ── Controls info ── */
+#ctrl{font-size:11px;color:#4a4d5e;text-align:center;letter-spacing:0.3px;line-height:1.6}
+
+/* ── D-pad ── */
 #dpad{display:grid;grid-template-areas:". up ." "left down right";gap:6px;margin-top:4px}
 #dpad button{
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;
   display:flex;align-items:center;justify-content:center;cursor:pointer;
   border-radius:12px;padding:0;
-  font-size:clamp(16px,4.5vw,22px);
-  width:clamp(50px,14vw,68px);height:clamp(50px,14vw,68px);
+  font-size:18px;
+  width:56px;height:56px;
   background:rgba(255,255,255,0.04);
   border:1px solid rgba(255,255,255,0.08);
   color:#6b6f85;
@@ -73,11 +140,13 @@ h1{
 }
 #dpad button:active{
   background:rgba(167,139,250,0.15);
-  transform:scale(0.95);
+  transform:scale(0.93);
 }
 #btn-up{grid-area:up}#btn-left{grid-area:left}#btn-down{grid-area:down}#btn-right{grid-area:right}
+
+/* ── New Game button ── */
 #rb{
-  margin-top:10px;padding:10px 28px;
+  margin-top:6px;padding:10px 28px;
   background:linear-gradient(135deg,rgba(167,139,250,0.15),rgba(96,165,250,0.15));
   border:1px solid rgba(167,139,250,0.25);
   color:#c8cad0;border-radius:10px;cursor:pointer;
@@ -91,4 +160,32 @@ h1{
   border-color:rgba(167,139,250,0.4);
   transform:translateY(-1px);
   box-shadow:0 4px 16px rgba(167,139,250,0.15);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE: stack vertically, allow scroll
+   ═══════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  body{
+    align-items:flex-start;
+    overflow-y:auto;
+  }
+  #gw{
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    padding:1rem 0.5rem;
+  }
+  #sidebar{
+    min-width:unset;max-width:580px;width:100%;
+    padding:14px 12px;
+    order:-1; /* title + HUD above canvas on mobile */
+  }
+  h1{font-size:clamp(18px,4.5vw,24px)}
+  #hud{flex-direction:row;flex-wrap:wrap;justify-content:center}
+  .hud-card{padding:6px 12px;font-size:12px}
+  #dpad button{
+    font-size:clamp(16px,4.5vw,22px);
+    width:clamp(50px,14vw,68px);height:clamp(50px,14vw,68px);
+  }
 }
