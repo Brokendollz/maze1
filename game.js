@@ -816,7 +816,7 @@ document.addEventListener('keydown',e=>{
     zone:zone,
     mode:'static',
     position:{left:'50%',top:'50%'},
-    color:'rgba(167,139,250,0.35)',
+    color:'rgba(220,40,40,0.85)',
     size:120,
     restOpacity:0.6,
     fadeTime:150

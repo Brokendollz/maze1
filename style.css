@@ -119,14 +119,15 @@ h1{
 /* ── Controls info ── */
 #ctrl{font-size:11px;color:#4a4d5e;text-align:center;letter-spacing:0.3px;line-height:1.6}
 
-/* ── Joystick zone ── */
+/* ── Joystick zone (floating) ── */
 #joystick-zone{
-  position:relative;
-  width:150px;height:150px;
-  margin:0 auto;
+  position:fixed;
+  bottom:24px;
+  right:24px;
+  width:140px;height:140px;
   touch-action:none;
   display:none; /* shown only on touch devices via JS */
-  order:99; /* always last, below canvas */
+  z-index:9999;
 }
 
 /* ── New Game button ── */
@@ -167,11 +168,6 @@ h1{
     order:1; /* HUD first */
   }
   #game-area{order:2} /* canvas second */
-  #joystick-zone{
-    order:3; /* joystick last, below canvas */
-    width:clamp(130px,35vw,170px);
-    height:clamp(130px,35vw,170px);
-  }
   h1{font-size:clamp(18px,4.5vw,24px)}
   #hud{flex-direction:row;flex-wrap:wrap;justify-content:center}
   .hud-card{padding:6px 12px;font-size:12px}
