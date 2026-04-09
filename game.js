@@ -822,14 +822,8 @@ document.addEventListener('keydown',e=>{
     fadeTime:150
   });
   let joyDir=null,joyInterval=null;
-  const FIRST_DELAY=120,REPEAT_DELAY=110;
-  function dirFromAngle(deg){
-    /* nipplejs angles: 0=right, 90=up, 180=left, 270=down */
-    if(deg>=45&&deg<135) return [0,-1];  /* up */
-    if(deg>=135&&deg<225) return [-1,0]; /* left */
-    if(deg>=225&&deg<315) return [0,1];  /* down */
-    return [1,0]; /* right */
-  }
+  const REPEAT_DELAY=120;
+  const dirMap={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
   function startRepeat(dx,dy){
     stopRepeat();
     joyDir=[dx,dy];
@@ -844,7 +838,8 @@ document.addEventListener('keydown',e=>{
   }
   mgr.on('move',function(evt,data){
     if(!data.direction) return;
-    const d=dirFromAngle(data.angle.degree);
+    const d=dirMap[data.direction.angle];
+    if(!d) return;
     if(!joyDir||d[0]!==joyDir[0]||d[1]!==joyDir[1]){
       startRepeat(d[0],d[1]);
     }
