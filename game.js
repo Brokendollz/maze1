@@ -29,8 +29,77 @@ function lvlCfg(l){
     iGem:Math.min(6+l*3,25)};
 }
 
+/* ── Particles ── */
+let particles=[];
+function spawnParticles(cx,cy,color,count){
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=1.5+Math.random()*3;
+    particles.push({
+      x:cx,y:cy,
+      vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
+      life:1,decay:0.015+Math.random()*0.015,
+      size:2+Math.random()*3,
+      color:color
+    });
+  }
+}
+function updateAndDrawParticles(){
+  particles=particles.filter(p=>p.life>0);
+  for(const p of particles){
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.life-=p.decay;
+    ctx.save();
+    ctx.globalAlpha=p.life;
+    ctx.fillStyle=p.color;
+    ctx.shadowColor=p.color;ctx.shadowBlur=6;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* ── Screen shake ── */
+function triggerShake(){
+  const wrap=document.getElementById('canvas-wrap');
+  wrap.classList.remove('shake');
+  void wrap.offsetWidth; /* reflow to re-trigger */
+  wrap.classList.add('shake');
+  setTimeout(()=>wrap.classList.remove('shake'),500);
+}
+
+/* ── Confetti on level complete ── */
+function triggerConfetti(){
+  if(typeof confetti!=='function')return;
+  const canvasRect=document.getElementById('canvas').getBoundingClientRect();
+  const cx=(canvasRect.left+canvasRect.right)/2/window.innerWidth;
+  const cy=(canvasRect.top+canvasRect.bottom)/2/window.innerHeight;
+  confetti({particleCount:80,spread:70,origin:{x:cx,y:cy},colors:['#34d399','#60a5fa','#a78bfa','#fbbf24'],gravity:0.8});
+  setTimeout(()=>confetti({particleCount:50,spread:90,origin:{x:cx,y:cy},colors:['#34d399','#67e8f9','#fde68a'],gravity:0.7}),300);
+}
+
+/* ── HUD pop animation ── */
+function popHudCard(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const card=el.closest('.hud-card');
+  if(!card)return;
+  card.classList.remove('pop');
+  void card.offsetWidth;
+  card.classList.add('pop');
+}
+
 /* ── Helpers ── */
-function calcTile(){return Math.max(26,Math.floor(Math.min(window.innerWidth-24,540)/COLS));}
+function calcTile(){
+  /* Desktop: fit to viewport height; Mobile: fit to width */
+  const isMobile=window.innerWidth<=768;
+  if(isMobile){
+    return Math.max(26,Math.floor(Math.min(window.innerWidth-24,540)/COLS));
+  }
+  const maxH=window.innerHeight-60;
+  const maxW=window.innerWidth-340; /* leave room for sidebar */
+  const tH=Math.floor(maxH/ROWS);
+  const tW=Math.floor(maxW/COLS);
+  return Math.max(26,Math.min(tH,tW,60));
+}
 function resizeCanvas(){T=calcTile();canvas.width=COLS*T;canvas.height=ROWS*T;}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]]}return a;}
 function isGem(t){return t===GEM||t===ICE_GEM||t===TIME_GEM||t===BOMB_GEM;}
@@ -110,7 +179,7 @@ function initLevel(){
   collected=0;doorOpen=false;dead=false;levelComplete=false;
   px=1;py=1;nextBurn=null;combo=1;lastPickupTime=0;facingDir=1;lastMoveTime=0;
   fireFrozen=false;fireSlowed=false;freezeEndTime=0;slowEndTime=0;
-  comboPopups=[];
+  comboPopups=[];particles=[];
   fireAge=new Map();
   burnedGems=new Map();
 
@@ -159,6 +228,10 @@ function tryMove(dx,dy){
     lastPickupTime=now;
     const pts=10*combo;score+=pts;
     if(combo>1)addPopup(`x${combo} +${pts}`,nx*T+T/2,ny*T);
+    /* Particle burst on gem collect */
+    const pColors={[GEM]:'#60a5fa',[ICE_GEM]:'#67e8f9',[TIME_GEM]:'#fbbf24',[BOMB_GEM]:'#f87171'};
+    spawnParticles(nx*T+T/2,ny*T+T/2,pColors[tile]||'#60a5fa',combo>1?18:10);
+    popHudCard('sc');
     /* Specials */
     if(tile===ICE_GEM){
       fireFrozen=true;freezeEndTime=now+5000;
@@ -171,6 +244,8 @@ function tryMove(dx,dy){
       for(let by=ny-1;by<=ny+1;by++)for(let bx=nx-1;bx<=nx+1;bx++)
         if(by>=0&&by<ROWS&&bx>=0&&bx<COLS&&grid[by][bx]===FIRE){const bk=`${bx},${by}`;grid[by][bx]=EMPTY;fireAge.delete(bk);burnedGems.delete(bk);ext++;}
       addPopup(`💥 -${ext}🔥`,nx*T+T/2,ny*T-T*0.3,'#f87171');
+      /* explosion particles */
+      spawnParticles(nx*T+T/2,ny*T+T/2,'#ef4444',25);
     }
     if(collected>=NEED&&!doorOpen){
       doorOpen=true;
@@ -182,12 +257,15 @@ function tryMove(dx,dy){
     dead=true;if(fireTimerId)clearTimeout(fireTimerId);if(extinguishTimerId)clearTimeout(extinguishTimerId);
     document.getElementById('msg').textContent='You burned! Game over.';
     document.getElementById('rb').style.display='block';
+    triggerShake();
+    spawnParticles(nx*T+T/2,ny*T+T/2,'#ef4444',30);
   }else if(doorOpen&&nx===DX&&ny===DY){
     levelComplete=true;levelCompleteTime=performance.now();
     if(fireTimerId)clearTimeout(fireTimerId);if(extinguishTimerId)clearTimeout(extinguishTimerId);
     const bonus=50*level;score+=bonus;
     document.getElementById('msg').textContent=`Level ${level} complete! +${bonus} bonus`;
-    updHUD();
+    updHUD();popHudCard('sc');
+    triggerConfetti();
     setTimeout(()=>{level++;initLevel();},2000);
   }
 }
@@ -499,6 +577,7 @@ function loop(t){
   drawPlayer(t);
   drawEffects(t);
   drawPopups(t);
+  updateAndDrawParticles();
 
   if(dead){
     ctx.fillStyle='rgba(8,9,15,0.75)';ctx.fillRect(0,0,canvas.width,canvas.height);
