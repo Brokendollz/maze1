@@ -2,7 +2,7 @@
 
 /* Tile types */
 const EMPTY=0,WALL=1,GEM=2,FIRE=3,ICE_GEM=4,TIME_GEM=5,BOMB_GEM=6;
-const SPECIAL_CHANCE=0.15,COMBO_WINDOW=1500,FIRE_LIFE_MIN=6000,FIRE_LIFE_MAX=12000;
+const SPECIAL_CHANCE=0.15,COMBO_WINDOW=1500,FIRE_LIFE_MIN=6000,FIRE_LIFE_MAX=12000,GEM_RESPAWN_MIN=4000,GEM_RESPAWN_MAX=8000;
 
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
@@ -14,7 +14,8 @@ let rafId,fireTimerId,nextBurn,burnStartTime,baseFireMs;
 let combo,lastPickupTime,comboPopups;
 let fireFrozen,freezeEndTime,fireSlowed,slowEndTime;
 let levelComplete,levelCompleteTime;
-let fireAge; /* Map "x,y" → timestamp when fire was placed */
+let fireAge; /* Map "x,y" → expiry timestamp */
+let burnedGems; /* Map "x,y" → respawn timestamp */
 let extinguishTimerId;
 let facingDir,lastMoveTime; /* direction: 1=right,-1=left,0=front; idle tracking */
 
@@ -49,13 +50,21 @@ function scheduleBurn(){if(fireTimerId)clearTimeout(fireTimerId);fireTimerId=set
 function extinguishOld(){
   if(dead||levelComplete)return;
   const now=performance.now();
+  let changed=false;
   for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const key=`${x},${y}`;
     if(grid[y][x]===FIRE){
-      const key=`${x},${y}`;
       const expire=fireAge.get(key);
-      if(expire&&now>=expire){grid[y][x]=EMPTY;fireAge.delete(key);}
+      if(expire&&now>=expire){grid[y][x]=EMPTY;fireAge.delete(key);changed=true;}
+    }
+    /* respawn burned gems */
+    if(grid[y][x]===EMPTY&&burnedGems.has(key)){
+      if(now>=burnedGems.get(key)&&!(px===x&&py===y)){
+        grid[y][x]=GEM;burnedGems.delete(key);changed=true;
+      }
     }
   }
+  if(changed){updHUD();pickNextBurn();}
   scheduleExtinguish();
 }
 function scheduleExtinguish(){if(extinguishTimerId)clearTimeout(extinguishTimerId);extinguishTimerId=setTimeout(extinguishOld,1000);}
@@ -66,7 +75,12 @@ function burnOne(){
   if(fireFrozen&&now<freezeEndTime){scheduleBurn();return;}
   if(now>=freezeEndTime)fireFrozen=false;
   if(now>=slowEndTime)fireSlowed=false;
-  if(nextBurn&&isGem(grid[nextBurn.y][nextBurn.x]))setFire(nextBurn.x,nextBurn.y);
+  if(nextBurn&&isGem(grid[nextBurn.y][nextBurn.x])){
+    setFire(nextBurn.x,nextBurn.y);
+    const key=`${nextBurn.x},${nextBurn.y}`;
+    const expire=fireAge.get(key);
+    burnedGems.set(key,expire+GEM_RESPAWN_MIN+Math.random()*(GEM_RESPAWN_MAX-GEM_RESPAWN_MIN));
+  }
   updHUD();pickNextBurn();scheduleBurn();
 }
 
@@ -98,6 +112,7 @@ function initLevel(){
   fireFrozen=false;fireSlowed=false;freezeEndTime=0;slowEndTime=0;
   comboPopups=[];
   fireAge=new Map();
+  burnedGems=new Map();
 
   grid=Array.from({length:ROWS},(_,y)=>Array.from({length:COLS},(_,x)=>
     (x===0||x===COLS-1||y===0||y===ROWS-1)?WALL:(x%2===0&&y%2===0)?WALL:EMPTY));
@@ -154,7 +169,7 @@ function tryMove(dx,dy){
     }else if(tile===BOMB_GEM){
       let ext=0;
       for(let by=ny-1;by<=ny+1;by++)for(let bx=nx-1;bx<=nx+1;bx++)
-        if(by>=0&&by<ROWS&&bx>=0&&bx<COLS&&grid[by][bx]===FIRE){grid[by][bx]=EMPTY;fireAge.delete(`${bx},${by}`);ext++;}
+        if(by>=0&&by<ROWS&&bx>=0&&bx<COLS&&grid[by][bx]===FIRE){const bk=`${bx},${by}`;grid[by][bx]=EMPTY;fireAge.delete(bk);burnedGems.delete(bk);ext++;}
       addPopup(`💥 -${ext}🔥`,nx*T+T/2,ny*T-T*0.3,'#f87171');
     }
     if(collected>=NEED&&!doorOpen){
