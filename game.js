@@ -749,6 +749,17 @@ function drawPlayer(t){
 
   ctx.restore(); /* head tilt */
   ctx.restore(); /* main transform */
+
+  /* ── Ice immunity tint ── */
+  if(fireFrozen&&t<freezeEndTime){
+    const pulse=0.12+0.08*Math.sin(t*0.008);
+    ctx.fillStyle=`rgba(100,210,255,${pulse})`;
+    ctx.fillRect(px*T,py*T,T,T);
+    ctx.shadowColor='rgba(100,220,255,0.4)';ctx.shadowBlur=T*0.4;
+    ctx.fillStyle='rgba(100,220,255,0.03)';
+    ctx.fillRect(px*T,py*T,T,T);
+    ctx.shadowBlur=0;
+  }
 }
 
 /* ── Effects overlay (active powerups) ── */
