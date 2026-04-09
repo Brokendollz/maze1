@@ -2,7 +2,7 @@
 
 /* Tile types */
 const EMPTY=0,WALL=1,GEM=2,FIRE=3,ICE_GEM=4,TIME_GEM=5,BOMB_GEM=6;
-const SPECIAL_CHANCE=0.15,COMBO_WINDOW=1500,FIRE_LIFE_MIN=6000,FIRE_LIFE_MAX=12000,GEM_RESPAWN_MIN=4000,GEM_RESPAWN_MAX=8000;
+const SPECIAL_CHANCE=0.18,COMBO_WINDOW=1500,FIRE_LIFE_MIN=2500,FIRE_LIFE_MAX=6000,GEM_RESPAWN_MIN=2000,GEM_RESPAWN_MAX=4500;
 
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
@@ -23,9 +23,9 @@ let facingDir,lastMoveTime; /* direction: 1=right,-1=left,0=front; idle tracking
 function lvlCfg(l){
   const s=Math.min(7+(l-1)*2,13);
   return{cols:s,rows:s,
-    fireMs:Math.max(1500,4000-(l-1)*300),
+    fireMs:Math.max(800,3000-(l-1)*350),
     need:Math.min(3+l*2,15),
-    iFire:Math.min(2+l*2,12),
+    iFire:Math.min(3+l*2,15),
     iGem:Math.min(6+l*3,25)};
 }
 
@@ -320,7 +320,7 @@ function extinguishOld(){
   if(changed){updHUD();pickNextBurn();}
   scheduleExtinguish();
 }
-function scheduleExtinguish(){if(extinguishTimerId)clearTimeout(extinguishTimerId);extinguishTimerId=setTimeout(extinguishOld,1000);}
+function scheduleExtinguish(){if(extinguishTimerId)clearTimeout(extinguishTimerId);extinguishTimerId=setTimeout(extinguishOld,500);}
 
 function burnOne(){
   if(dead||levelComplete)return;
@@ -418,7 +418,7 @@ function tryMove(dx,dy){
     /* Specials */
     if(tile===ICE_GEM){
       fireFrozen=true;freezeEndTime=now+5000;
-      addPopup('❄️ FREEZE!',nx*T+T/2,ny*T-T*0.3,'#67e8f9');
+      addPopup('❄️ IMMUNE!',nx*T+T/2,ny*T-T*0.3,'#67e8f9');
     }else if(tile===TIME_GEM){
       fireSlowed=true;slowEndTime=now+8000;
       addPopup('⏳ SLOW!',nx*T+T/2,ny*T-T*0.3,'#fde68a');
@@ -437,11 +437,17 @@ function tryMove(dx,dy){
     }
     updHUD();
   }else if(tile===FIRE){
+    if(fireFrozen&&performance.now()<freezeEndTime){
+      /* immune – walk through fire, extinguish it */
+      grid[ny][nx]=EMPTY;fireAge.delete(`${nx},${ny}`);
+      spawnParticles(nx*T+T/2,ny*T+T/2,'#67e8f9',12);
+    }else{
     dead=true;if(fireTimerId)clearTimeout(fireTimerId);if(extinguishTimerId)clearTimeout(extinguishTimerId);
     document.getElementById('msg').textContent='You burned! Game over.';
     document.getElementById('rb').style.display='block';
     triggerShake();
     spawnParticles(nx*T+T/2,ny*T+T/2,'#ef4444',30);
+    }
   }else if(doorOpen&&nx===DX&&ny===DY){
     levelComplete=true;levelCompleteTime=performance.now();
     if(fireTimerId)clearTimeout(fireTimerId);if(extinguishTimerId)clearTimeout(extinguishTimerId);
