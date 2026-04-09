@@ -338,6 +338,10 @@ function loop(t){
       ctx.shadowColor='rgba(239,68,68,0.6)';ctx.shadowBlur=20;ctx.fillStyle='#ef4444';
     }
     ctx.fillText(won?'You escaped!':'You burned!',canvas.width/2,canvas.height/2);
+    ctx.shadowBlur=0;
+    ctx.font=`500 ${Math.max(11,T*.28)}px 'Inter',system-ui,sans-serif`;
+    ctx.fillStyle='rgba(200,202,208,0.6)';
+    ctx.fillText('Press Enter or tap New Game',canvas.width/2,canvas.height/2+fSize*1.2);
     ctx.restore();
     return;
   }
@@ -345,7 +349,7 @@ function loop(t){
 }
 
 /* ── Input ── */
-document.addEventListener('keydown',e=>{const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0],W:[0,-1],S:[0,1],A:[-1,0],D:[1,0]};if(m[e.key]){tryMove(...m[e.key]);e.preventDefault();}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(dead||won)){initGame();e.preventDefault();return;}const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0],W:[0,-1],S:[0,1],A:[-1,0],D:[1,0]};if(m[e.key]){tryMove(...m[e.key]);e.preventDefault();}});
 function bindBtn(id,dx,dy){const btn=document.getElementById(id);let active=false;btn.addEventListener('touchstart',e=>{e.preventDefault();if(!active){active=true;tryMove(dx,dy);}},{passive:false});btn.addEventListener('touchend',()=>{active=false;},{passive:true});btn.addEventListener('click',()=>tryMove(dx,dy));}
 bindBtn('btn-up',0,-1);bindBtn('btn-down',0,1);bindBtn('btn-left',-1,0);bindBtn('btn-right',1,0);
 let ts=null;canvas.addEventListener('touchstart',e=>{ts={x:e.touches[0].clientX,y:e.touches[0].clientY};e.preventDefault();},{passive:false});canvas.addEventListener('touchend',e=>{if(!ts)return;const dx=e.changedTouches[0].clientX-ts.x,dy=e.changedTouches[0].clientY-ts.y;if(Math.max(Math.abs(dx),Math.abs(dy))>18)Math.abs(dx)>Math.abs(dy)?tryMove(dx>0?1:-1,0):tryMove(0,dy>0?1:-1);ts=null;e.preventDefault();},{passive:false});
