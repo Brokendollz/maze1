@@ -611,12 +611,12 @@ function drawPlayer(t){
   const dir=facingDir||1; /* 1=right, -1=left */
   const idle=t-lastMoveTime>300; /* idle after 300ms */
 
-  /* idle animation: gentle breathing bob */
-  const breathe=idle?Math.sin(t*0.003)*u*0.6:0;
-  const headTilt=idle?Math.sin(t*0.002)*0.04:0;
+  /* idle animation: gentle breathing */
+  const breathe=idle?Math.sin(t*0.003)*u*0.3:0;
+  const headTilt=idle?Math.sin(t*0.002)*0.03:0;
 
   ctx.save();
-  ctx.translate(cx,cy+breathe);
+  ctx.translate(cx,cy);
   ctx.scale(dir,1); /* flip horizontally for direction */
 
   const lw=Math.max(1,u*0.5);
@@ -638,7 +638,8 @@ function drawPlayer(t){
   ctx.fillRect(-u*2.6,u*6.3+legKick,u*1.8,u*1);
   ctx.fillRect(u*0.8,u*6.3-legKick,u*1.8,u*1);
 
-  /* ── Body / jacket ── */
+  /* ── Body / jacket ── (breathe shifts upper body only) */
+  ctx.translate(0,breathe);
   ctx.fillStyle='#92400e';
   ctx.beginPath();
   ctx.moveTo(-u*2.5,u*0.5);
