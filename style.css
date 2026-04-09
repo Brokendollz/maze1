@@ -1,13 +1,15 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{
-  background:#08090f;
+  background:#0a0a12;
   background-image:
-    radial-gradient(ellipse at 20% 50%, rgba(30,60,120,0.15) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(100,40,120,0.1) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 50%, rgba(30,60,120,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(100,40,120,0.08) 0%, transparent 50%);
   display:flex;align-items:center;justify-content:center;
-  min-height:100vh;font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;
+  font-family:'Press Start 2P','Inter',system-ui,monospace;
   color:#c8cad0;
   overflow:hidden;
+  image-rendering:pixelated;
 }
 
 /* ── Main wrapper: desktop = row, mobile = column ── */
@@ -24,12 +26,12 @@ body{
 }
 #canvas-wrap{
   position:relative;
-  border-radius:14px;
+  border-radius:4px;
   overflow:hidden;
+  border:3px solid #2a2a3e;
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.06),
-    0 8px 32px rgba(0,0,0,0.5),
-    0 0 60px rgba(96,165,250,0.06);
+    6px 6px 0 #000,
+    0 0 40px rgba(96,165,250,0.08);
   transition:transform 0.15s ease;
 }
 #canvas-wrap.shake{
@@ -47,50 +49,52 @@ body{
   80%{transform:translate(3px,-1px) rotate(0.3deg)}
   90%{transform:translate(-1px,1px) rotate(-0.2deg)}
 }
-#canvas{display:block;touch-action:none;cursor:default;border-radius:14px}
+#canvas{display:block;touch-action:none;cursor:default;border-radius:2px;image-rendering:pixelated}
 
 /* ── Sidebar ── */
 #sidebar{
-  display:flex;flex-direction:column;align-items:center;gap:14px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
   min-width:220px;max-width:280px;
-  padding:20px 16px;
-  background:rgba(255,255,255,0.02);
-  border:1px solid rgba(255,255,255,0.06);
-  border-radius:16px;
-  backdrop-filter:blur(12px);
+  padding:18px 14px;
+  background:rgba(10,10,20,0.85);
+  border:2px solid #2a2a3e;
+  border-radius:4px;
+  box-shadow:4px 4px 0 #000;
 }
 
 h1{
-  font-family:'Orbitron','Inter',system-ui,sans-serif;
-  font-size:22px;font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;
-  background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);
+  font-family:'Press Start 2P',monospace;
+  font-size:14px;font-weight:400;
+  letter-spacing:1px;text-transform:uppercase;
+  background:linear-gradient(180deg,#a78bfa,#60a5fa);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
-  filter:drop-shadow(0 0 12px rgba(96,165,250,0.3));
+  filter:drop-shadow(2px 2px 0 rgba(0,0,0,0.5));
   text-align:center;
+  line-height:1.4;
 }
 
 /* ── HUD cards ── */
 #hud{
-  display:flex;flex-direction:column;gap:6px;width:100%;
+  display:flex;flex-direction:column;gap:5px;width:100%;
 }
 .hud-card{
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.07);
-  border-radius:10px;
-  padding:8px 14px;
-  font-size:13px;color:#8b8fa3;
-  backdrop-filter:blur(8px);
+  background:#12121e;
+  border:2px solid #2a2a3e;
+  border-radius:2px;
+  padding:7px 10px;
+  font-size:9px;color:#8b8fa3;
   display:flex;align-items:center;gap:6px;
-  transition:border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+  transition:border-color 0.2s, box-shadow 0.2s;
+  box-shadow:2px 2px 0 rgba(0,0,0,0.4);
+  line-height:1.4;
 }
 .hud-card:hover{
-  border-color:rgba(255,255,255,0.15);
-  transform:translateX(-2px);
+  border-color:#4a4a6a;
+  box-shadow:2px 2px 0 rgba(96,165,250,0.15);
 }
-.hud-card b{color:#e2e4ea;font-weight:600;transition:color 0.3s,transform 0.2s}
-.hud-card .icon{font-size:15px}
+.hud-card b{color:#e2e4ea;transition:color 0.3s,transform 0.2s}
+.hud-card .icon{font-size:13px}
 
 /* score pop animation */
 .hud-card.pop b{
@@ -104,9 +108,10 @@ h1{
 
 /* ── Message area ── */
 #msg{
-  font-size:13px;font-weight:500;color:#a78bfa;min-height:20px;
-  text-align:center;padding:0 8px;
+  font-size:8px;color:#a78bfa;min-height:18px;
+  text-align:center;padding:0 6px;
   transition:color 0.3s;
+  line-height:1.5;
 }
 #msg:not(:empty){
   animation:msgSlide 0.3s ease-out;
@@ -117,7 +122,7 @@ h1{
 }
 
 /* ── Controls info ── */
-#ctrl{font-size:11px;color:#4a4d5e;text-align:center;letter-spacing:0.3px;line-height:1.6}
+#ctrl{font-size:7px;color:#4a4d5e;text-align:center;letter-spacing:0.3px;line-height:1.8}
 
 /* ── Joystick zone (floating) ── */
 #joystick-zone{
@@ -170,20 +175,24 @@ h1{
 
 /* ── New Game button ── */
 #rb{
-  margin-top:6px;padding:10px 28px;
-  background:linear-gradient(135deg,rgba(167,139,250,0.15),rgba(96,165,250,0.15));
-  border:1px solid rgba(167,139,250,0.25);
-  color:#c8cad0;border-radius:10px;cursor:pointer;
-  font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;
-  letter-spacing:0.5px;text-transform:uppercase;
-  backdrop-filter:blur(4px);
-  transition:all 0.2s ease;
+  margin-top:4px;padding:10px 20px;
+  background:#1a1a2e;
+  border:2px solid #a78bfa;
+  color:#c8cad0;border-radius:2px;cursor:pointer;
+  font-family:'Press Start 2P',monospace;font-size:8px;
+  text-transform:uppercase;
+  box-shadow:3px 3px 0 rgba(0,0,0,0.5);
+  transition:all 0.15s ease;
 }
 #rb:hover{
-  background:linear-gradient(135deg,rgba(167,139,250,0.25),rgba(96,165,250,0.25));
-  border-color:rgba(167,139,250,0.4);
-  transform:translateY(-1px);
-  box-shadow:0 4px 16px rgba(167,139,250,0.15);
+  background:#252540;
+  border-color:#c4b5fd;
+  transform:translate(-1px,-1px);
+  box-shadow:4px 4px 0 rgba(0,0,0,0.5);
+}
+#rb:active{
+  transform:translate(2px,2px);
+  box-shadow:1px 1px 0 rgba(0,0,0,0.5);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -202,12 +211,12 @@ h1{
   }
   #sidebar{
     min-width:unset;max-width:580px;width:100%;
-    padding:14px 12px;
+    padding:12px 10px;
     order:1; /* HUD first */
   }
   #game-area{order:2} /* canvas second */
   #ctrl{display:none}
-  h1{font-size:clamp(18px,4.5vw,24px)}
+  h1{font-size:clamp(10px,3vw,14px)}
   #hud{flex-direction:row;flex-wrap:wrap;justify-content:center}
-  .hud-card{padding:6px 12px;font-size:12px}
+  .hud-card{padding:5px 8px;font-size:7px}
 }
